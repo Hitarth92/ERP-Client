@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { ClerkUsers, useListRoles, Locations, Organizations } from '../../../api';
 import { useSession } from '../../../context/SessionContext';
+import { formatRoleName } from '../../../lib/roleLabel';
 import type { InviteUserPayload } from '../../../types';
 
 interface Props {
@@ -114,7 +115,7 @@ export function InviteUserDrawer({ open, onClose }: Props) {
             </SelectTrigger>
             <SelectContent>
               {invitableRoles.map((r) => (
-                <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                <SelectItem key={r.id} value={r.id}>{formatRoleName(r.name)}</SelectItem>
               ))}
             </SelectContent>
           </Select>

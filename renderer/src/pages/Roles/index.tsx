@@ -6,14 +6,18 @@ import { Button } from '../../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Roles, useListRoles } from '../../api';
 import { loadErrorMessage } from '../../lib/api-error';
+import { formatRoleName } from '../../lib/roleLabel';
 import { ROLE_NAMES, type Role } from '../../types';
 
 const ROLE_BADGE: Record<string, string> = {
-  super_admin:   'bg-red-500/10 text-red-500',
-  org_admin:     'bg-purple-500/10 text-purple-500',
-  org_manager:   'bg-orange-500/10 text-orange-500',
-  store_manager: 'bg-blue-500/10 text-blue-500',
-  store_staff:   'bg-green-500/10 text-green-600',
+  super_admin:    'bg-red-500/10 text-red-500',
+  org_admin:      'bg-purple-500/10 text-purple-500',
+  org_manager:    'bg-orange-500/10 text-orange-500',
+  branch_manager: 'bg-cyan-500/10 text-cyan-600',
+  store_manager:  'bg-blue-500/10 text-blue-500',
+  store_staff:    'bg-green-500/10 text-green-600',
+  picker:         'bg-slate-500/10 text-slate-500',
+  driver:         'bg-slate-500/10 text-slate-500',
 };
 
 interface FormState {
@@ -60,7 +64,7 @@ export default function RolesPage(): React.JSX.Element {
             render: (r) => (
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${ROLE_BADGE[r.name ?? ''] ?? 'bg-muted text-muted-foreground'}`}>
                 <ShieldCheck size={11} />
-                {r.name ?? '—'}
+                {formatRoleName(r.name)}
               </span>
             ),
           },
@@ -109,7 +113,7 @@ export default function RolesPage(): React.JSX.Element {
               </SelectTrigger>
               <SelectContent>
                 {ROLE_NAMES.map((n) => (
-                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                  <SelectItem key={n} value={n}>{formatRoleName(n)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

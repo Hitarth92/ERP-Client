@@ -802,6 +802,7 @@ export interface PlatformUser {
   lastName?: string;
   phone?: string;
   isActive?: boolean;
+  roleNames?: string[];
   createdAt?: string;
 }
 

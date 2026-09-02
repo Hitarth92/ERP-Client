@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { UserRoles, Branches, Locations, useListUserRoles, useListRoles, useListUserDirectory, useUpdateUserRole } from '../../api';
 import { loadErrorMessage } from '../../lib/api-error';
+import { formatRoleName } from '../../lib/roleLabel';
 import type { UserRole } from '../../types';
 
 interface FormState {
@@ -118,7 +119,7 @@ export default function UserRolesPage(): React.JSX.Element {
               const name = r.roleId ? (roleById.get(r.roleId) ?? r.roleId) : '—';
               return (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                  {name}
+                  {formatRoleName(name)}
                 </span>
               );
             },
@@ -198,7 +199,7 @@ export default function UserRolesPage(): React.JSX.Element {
               </SelectTrigger>
               <SelectContent>
                 {roles.filter((r) => r.name !== 'super_admin').map((r) => (
-                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                  <SelectItem key={r.id} value={r.id}>{formatRoleName(r.name)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

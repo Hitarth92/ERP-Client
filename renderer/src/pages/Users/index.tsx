@@ -10,7 +10,7 @@ import { InviteUserDrawer } from './components/InviteUserDrawer';
 import { UpdateRolesDrawer } from './components/UpdateRolesDrawer';
 import { AssignOrgDrawer } from '../Organizations/components/AssignOrgDrawer';
 import { Button } from '../../components/ui/button';
-import { ClerkUsers } from '../../api';
+import { ClerkUsers, useListUserRoles, useListRoles, useListUserDirectory } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { usePagination } from '../../hooks/usePagination';
 import { EInvitationStatus, type ClerkInvitation, type ClerkUser } from '../../types';
@@ -33,7 +33,7 @@ const INVITATION_STATUS_BADGE: Record<EInvitationStatus, string> = {
   [EInvitationStatus.Revoked]:  'bg-red-500/10 text-red-500 border-red-500/20',
 };
 
-function buildColumns(): Column<ClerkUser>[] {
+function buildColumns(getRoles: (row: ClerkUser) => string[]): Column<ClerkUser>[] {
   return [
     {
       key: 'avatar',
@@ -77,8 +77,8 @@ function buildColumns(): Column<ClerkUser>[] {
     },
     {
       key: 'roles',
-      label: 'Roles',
-      render: (row) => <UserRolePills roles={row.roles} />,
+      label: 'App Roles',
+      render: (row) => <UserRolePills roles={getRoles(row)} />,
     },
     {
       key: 'lastSignInAt',
@@ -126,6 +126,45 @@ export default function UsersPage(): React.JSX.Element {
     if (statusFilter === 'active') return rawRows.filter((r) => !r.banned);
     return rawRows;
   }, [rawRows, statusFilter]);
+
+  const { data: directory = [] } = useListUserDirectory(orgId);
+  const { data: assignments = [] } = useListUserRoles();
+  const { data: roleList = [] } = useListRoles();
+
+  const erpRolesByClerkId = useMemo(() => {
+    const roleById = new Map(roleList.map((r) => [r.id, r.name]).filter((e): e is [string, string] => !!e[1]));
+    const dbUserByEmail = new Map(
+      directory.filter((u) => u.email).map((u) => [u.email!.toLowerCase(), u]),
+    );
+    const rolesByDbUserId = new Map<string, string[]>();
+    for (const a of assignments) {
+      if (!a.userId || !a.roleId) continue;
+      const name = roleById.get(a.roleId);
+      if (!name) continue;
+      const prev = rolesByDbUserId.get(a.userId) ?? [];
+      if (!prev.includes(name)) rolesByDbUserId.set(a.userId, [...prev, name]);
+    }
+    for (const u of directory) {
+      if (u.roleNames?.length) rolesByDbUserId.set(u.id, u.roleNames);
+    }
+    const map = new Map<string, string[]>();
+    for (const row of filteredRows) {
+      const dbUser = dbUserByEmail.get(row.email?.toLowerCase() ?? '');
+      if (!dbUser) continue;
+      const roles = rolesByDbUserId.get(dbUser.id);
+      if (roles?.length) map.set(row.clerkUserId, roles);
+    }
+    return map;
+  }, [directory, assignments, roleList, filteredRows]);
+
+  const resolveRoles = useCallback(
+    (row: ClerkUser): string[] => {
+      const fromApi = row.roles?.length ? row.roles : undefined;
+      const fromClient = erpRolesByClerkId.get(row.clerkUserId);
+      return fromApi ?? fromClient ?? [];
+    },
+    [erpRolesByClerkId],
+  );
 
   const { data: invitations = [], isLoading: invLoading, refetch: refetchInv } =
     ClerkUsers.useListInvitations(invStatusFilter ?? undefined);
@@ -185,13 +224,15 @@ export default function UsersPage(): React.JSX.Element {
     </>
   );
 
-  const columns = useMemo(() => buildColumns(), []);
+  const columns = useMemo(() => buildColumns(resolveRoles), [resolveRoles]);
 
   return (
     <div className="flex h-full flex-col gap-4">
       <DataTable<ClerkUser>
         title="Users"
-        description={orgId ? `Clerk users in your organisation — ${rawTotal} total` : 'All Clerk users'}
+        description={orgId
+          ? `Clerk accounts in your organisation — App Roles come from User Roles assignments (not Clerk labels).`
+          : 'All Clerk users'}
         columns={columns}
         rows={filteredRows}
         total={statusFilter ? filteredRows.length : rawTotal}

@@ -1,4 +1,5 @@
 import { cn } from '../../../lib/utils';
+import { formatRoleName } from '../../../lib/roleLabel';
 
 const ROLE_COLORS: Record<string, string> = {
   admin:   'bg-violet-500/10 text-violet-600 dark:text-violet-400',
@@ -17,8 +18,9 @@ interface Props {
 
 export function UserRolePills({ roles, max = 3 }: Props) {
   if (!roles.length) {
-    return <span className="text-xs text-muted-foreground">No roles</span>;
+    return <span className="text-xs text-muted-foreground">No app roles — assign via User Roles</span>;
   }
+
   const visible  = roles.slice(0, max);
   const overflow = roles.length - visible.length;
 
@@ -28,11 +30,11 @@ export function UserRolePills({ roles, max = 3 }: Props) {
         <span
           key={r}
           className={cn(
-            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize',
+            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
             roleColor(r),
           )}
         >
-          {r}
+          {formatRoleName(r)}
         </span>
       ))}
       {overflow > 0 && (
